@@ -14,23 +14,30 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   Completer<GoogleMapController> _controllerGoogleMap = Completer();
-  // GoogleMapController newGoogleMapController;
+  // late GoogleMapController newGoogleMapController;
 
   GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 
-  Position currentPosition;
+  // Position currentPosition;
   var geolocator = Geolocator();
+  double bottomPadingOfMap = 0;
 
   static final CameraPosition _kGooglePlex = CameraPosition(
     target: LatLng(37.42796133580664, -122.085749655962),
     zoom: 14.4746,
   );
 
-  void locatePosition() async {
+  void locatePosition(GoogleMapController newGoogleMapController) async {
     //Find appropriate location acuracy setting later
     Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high);
-    currentPosition = position;
+    // currentPosition = position;
+
+    LatLng latLngPosition = LatLng(position.latitude, position.longitude);
+    CameraPosition cameraPosition =
+        CameraPosition(target: latLngPosition, zoom: 14.0);
+    newGoogleMapController
+        .animateCamera(CameraUpdate.newCameraPosition(cameraPosition));
   }
 
   @override
@@ -111,12 +118,21 @@ class _MainScreenState extends State<MainScreen> {
       body: Stack(
         children: [
           GoogleMap(
+            padding: EdgeInsets.only(bottom: bottomPadingOfMap),
             mapType: MapType.normal,
             myLocationButtonEnabled: true,
+            myLocationEnabled: true,
+            zoomGesturesEnabled: true,
+            zoomControlsEnabled: true,
             initialCameraPosition: _kGooglePlex,
             onMapCreated: (GoogleMapController controller) {
               _controllerGoogleMap.complete(controller);
-              // newGoogleMapController = controller;
+              GoogleMapController newGoogleMapController = controller;
+
+              setState(() {
+                bottomPadingOfMap = 300.0;
+              });
+              locatePosition(newGoogleMapController);
             },
           ),
 
@@ -159,7 +175,7 @@ class _MainScreenState extends State<MainScreen> {
             right: 0.0,
             bottom: 0.0,
             child: Container(
-              height: 320.0,
+              height: 300.0,
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.only(
