@@ -158,7 +158,7 @@ class LoginScreen extends StatelessWidget {
     if (firebaseUser != null) {
       userRef.child(firebaseUser.uid).once().then((DataSnapshot snap) {
         if (snap.value != null) {
-          displayToastMessage("You are logged-in.", context);
+          displayToastMessage("You are logged-in now.", context);
           Navigator.pushNamedAndRemoveUntil(
               context, MainScreen.idScreen, (route) => false);
         } else {

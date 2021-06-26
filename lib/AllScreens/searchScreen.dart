@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:rider_app/AllWidgets/divider.dart';
+import 'package:rider_app/AllWidgets/progressDialog.dart';
 import 'package:rider_app/Assistants/requestAssistant.dart';
 import 'package:rider_app/DataHandler/appData.dart';
+import 'package:rider_app/Models/address.dart';
+import 'package:rider_app/Models/placePredictions.dart';
 import 'package:rider_app/configMaps.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -14,6 +18,7 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   TextEditingController pickUpTextEditingController = TextEditingController();
   TextEditingController dropOffTextEditingController = TextEditingController();
+  List<PlacePredictions> placePredictionList = [];
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +32,7 @@ class _SearchScreenState extends State<SearchScreen> {
       body: Column(
         children: [
           Container(
-            height: 215.0,
+            // height: 185.0,
             decoration: BoxDecoration(
               color: Colors.white,
               boxShadow: [
@@ -40,7 +45,8 @@ class _SearchScreenState extends State<SearchScreen> {
               ],
             ),
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 25.0, vertical: 25.0),
+              padding: EdgeInsets.only(
+                  top: 25.0, bottom: 10.0, left: 25.0, right: 25.0),
               child: Column(
                 children: [
                   SizedBox(
@@ -64,7 +70,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     ],
                   ),
                   SizedBox(
-                    height: 16.0,
+                    height: 10.0,
                   ),
                   Row(
                     children: [
@@ -132,7 +138,10 @@ class _SearchScreenState extends State<SearchScreen> {
                                 border: InputBorder.none,
                                 isDense: true,
                                 contentPadding: EdgeInsets.only(
-                                    left: 11.0, top: 8.0, bottom: 8.0),
+                                  left: 11.0,
+                                  top: 8.0,
+                                  bottom: 8.0,
+                                ),
                               ),
                             ),
                           ),
@@ -144,6 +153,32 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             ),
           ),
+          SizedBox(
+            height: 5.0,
+          ),
+          //tile for predictions
+          (placePredictionList.length > 0)
+              ? Expanded(
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding:
+                          EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                      child: ListView.separated(
+                        itemBuilder: (context, index) {
+                          return PredictionsTile(
+                            placePredictions: placePredictionList[index],
+                          );
+                        },
+                        separatorBuilder: (context, index) => DividerWidget(),
+                        padding: EdgeInsets.all(0),
+                        itemCount: placePredictionList.length,
+                        shrinkWrap: true,
+                        physics: ClampingScrollPhysics(),
+                      ),
+                    ),
+                  ),
+                )
+              : Container(),
         ],
       ),
     );
@@ -160,8 +195,116 @@ class _SearchScreenState extends State<SearchScreen> {
         return;
       }
 
-      print("Places Prediction Response ::::::::::::::::::::::::::::::");
-      print(res);
+      if (res["status"] == "OK") {
+        var predictions = res["predictions"];
+
+        var placesList = (predictions as List)
+            .map((e) => PlacePredictions.fromJson(e))
+            .toList();
+
+        setState(() {
+          placePredictionList = placesList;
+        });
+      }
+    }
+  }
+}
+
+class PredictionsTile extends StatelessWidget {
+  final PlacePredictions placePredictions;
+
+  const PredictionsTile({Key? key, required this.placePredictions})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      onPressed: () {
+        getPlaceAddressDetails(placePredictions.place_id!, context);
+      },
+      child: Container(
+        child: Column(
+          children: [
+            SizedBox(
+              width: 10.0,
+            ),
+            Row(
+              children: [
+                Icon(
+                  Icons.add_location,
+                  color: Colors.black,
+                ),
+                SizedBox(
+                  width: 14.0,
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        height: 3.0,
+                      ),
+                      Text(
+                        placePredictions.main_text!,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 16.0, color: Colors.black),
+                      ),
+                      SizedBox(
+                        height: 1.0,
+                      ),
+                      Text(
+                        placePredictions.secondary_text!,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 12.0, color: Colors.grey),
+                      ),
+                      SizedBox(
+                        height: 3.0,
+                      ),
+                    ],
+                  ),
+                )
+              ],
+            ),
+            SizedBox(
+              width: 10.0,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void getPlaceAddressDetails(String placeId, BuildContext context) async {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) =>
+          ProgressDialog(message: "Setting DropOff, Please wait..."),
+    );
+    String placeDetailsUrl =
+        "https://maps.googleapis.com/maps/api/place/details/json?place_id=$placeId&key=$mapKey";
+
+    var res = await RequestAssistant.getRequest(placeDetailsUrl);
+
+    Navigator.pop(context);
+
+    if (res == "Failed.") {
+      return;
+    }
+    if (res["status"] == "OK") {
+      Address address = Address();
+      address.placeName = res["result"]["name"];
+      address.placeId = placeId;
+      address.placeFormattedAddress = res["result"]["formatted_address"];
+      address.latitude = res["result"]["geometry"]["location"]["lat"];
+      address.longitude = res["result"]["geometry"]["location"]["lng"];
+
+      Provider.of<AppData>(context, listen: false)
+          .updateDropOffLocationAddress(address);
+
+      print("This is Drop Off Location :: ");
+      print(address.placeName);
+
+      Navigator.pop(context, "obtainDirection");
     }
   }
 }

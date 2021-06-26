@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import 'package:rider_app/AllScreens/loginScreen.dart';
 import 'package:rider_app/AllScreens/mainscreen.dart';
 import 'package:rider_app/AllScreens/registrationscreen.dart';
 import 'package:rider_app/DataHandler/appData.dart';
+import 'package:rider_app/configMaps.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,7 +31,9 @@ class MyApp extends StatelessWidget {
           fontFamily: "Brand Bold",
           primarySwatch: Colors.blue,
         ),
-        initialRoute: MainScreen.idScreen,
+        initialRoute: (FirebaseAuth.instance.currentUser != null)
+            ? MainScreen.idScreen
+            : LoginScreen.idScreen,
         routes: {
           RegistrationScreen.idScreen: (context) => RegistrationScreen(),
           LoginScreen.idScreen: (context) => LoginScreen(),
