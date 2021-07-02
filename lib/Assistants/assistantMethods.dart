@@ -84,8 +84,8 @@ class AssistantMethods {
     return totalFareAmount.truncate();
   }
 
-  static void getCurrentOnlineUserInfo() async {
-    firebaseUser = await FirebaseAuth.instance.currentUser;
+  static void getCurrentOnlineUserInfo() {
+    firebaseUser = FirebaseAuth.instance.currentUser;
     String userId = firebaseUser!.uid;
 
     DatabaseReference reference =

@@ -7,7 +7,6 @@ import 'package:rider_app/AllScreens/loginScreen.dart';
 import 'package:rider_app/AllScreens/mainscreen.dart';
 import 'package:rider_app/AllScreens/registrationscreen.dart';
 import 'package:rider_app/DataHandler/appData.dart';
-import 'package:rider_app/configMaps.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
